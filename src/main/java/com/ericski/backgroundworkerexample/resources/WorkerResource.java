@@ -1,11 +1,9 @@
 package com.ericski.backgroundworkerexample.resources;
 
+import com.ericski.backgroundworkerexample.dao.JobResponse;
+import com.ericski.backgroundworkerexample.dao.SimpleWorkQueue;
 import com.google.gson.Gson;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
@@ -20,82 +18,103 @@ import javax.ws.rs.core.Response;
 @Path("worker")
 public class WorkerResource
 {
-    private static final Map<UUID, Long> work = new ConcurrentHashMap<>();
+    private static final SimpleWorkQueue workQueue = new SimpleWorkQueue();
 
+    /**
+     * Lists all outstanding background work
+     *
+     * @return
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response listAll()
     {
         Gson gson = new Gson();
-        return Response.ok(gson.toJson(work)).build();
+        return Response.ok(gson.toJson(workQueue.getAllJobs())).build();
     }
 
+    /**
+     * Returns the work if done, otherwise HTTP "Accepted" indicating that it isn't done yet
+     *
+     * @param id
+     * @return
+     */
     @GET
     @Path("{jobid}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response get(@PathParam("jobid") UUID id)
     {
-        Gson gson = new Gson();
-        Map<String, Object> responseMap = new HashMap<>();
-        responseMap.put("id", id);
-
-        if (work.containsKey(id))
-        {
-            Long when = work.get(id);
-            
-            if (when < System.currentTimeMillis())
-            {
-                // work is done, return it
-                responseMap.put("work", when.toString());
-                work.remove(id);
-                return Response.ok(gson.toJson(responseMap)).build();
-            }
-            
-            // work hasn't completed yet
-            return Response.status(Response.Status.ACCEPTED).entity(gson.toJson(responseMap)).build();
-        }
-        else
-        {
-            return Response.status(Response.Status.NOT_FOUND).entity(gson.toJson(responseMap)).build();
-        }
+        JobResponse<Long> work = workQueue.consumeJob(id);
+        return toWebResponse(work);
     }
 
+    /**
+     * Submits work to be done in the background
+     *
+     * @param workUnit
+     * @return
+     */
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response addWork(@FormParam("workUnit") int workUnit)
+    public Response addWork(@FormParam("workUnit") long workUnit)
     {
-        Gson gson = new Gson();
-
-        // adds "work"
-        UUID key = UUID.randomUUID();
-        long whenToFinish = System.currentTimeMillis() + (ThreadLocalRandom.current().nextInt(1, workUnit) * 1000);
-        work.put(key, whenToFinish);
-        Map<String, Object> responseMap = new HashMap<>();
-        responseMap.put("id", key);
-
-        return Response.status(Response.Status.CREATED).entity(gson.toJson(responseMap)).build();
+        JobResponse<Long> work = workQueue.submitJob(workUnit);
+        return toWebResponse(work);
     }
 
+    /**
+     * Used for canceling the work
+     *
+     * @param id
+     * @return
+     */
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{jobid}")
-    public Response delWork(@PathParam("jobid") UUID id)
+    public Response cancelWork(@PathParam("jobid") UUID id)
     {
-        Gson gson = new Gson();
+        JobResponse<Long> canceledJob = workQueue.cancelJob(id);
+        return toWebResponse(canceledJob);
+    }
 
-        Map<String, Object> responseMap = new HashMap<>();
-        responseMap.put("id", id);
+    /*--------------------------------------------------------------------------------
+     *
+     *  Various Helpers
+     *    
+     --------------------------------------------------------------------------------*/
+    private String toJson(JobResponse<Long> response)
+    {
+        Gson g = new Gson();
+        return g.toJson(response);
+    }
 
-        // deletes work in progress
-        if (work.containsKey(id))
+    private Response toWebResponse(JobResponse response)
+    {
+        return Response
+            .status(jobStatusToResponseStatus(response.getStatus()))
+            .entity(toJson(response))
+            .build();
+    }
+
+    private Response.Status jobStatusToResponseStatus(JobResponse.JobStatus jobStatus)
+    {
+        switch (jobStatus)
         {
-            work.remove(id);
-            return Response.ok(gson.toJson(responseMap)).build();
-        }
-        else
-        {
-            return Response.status(Response.Status.NOT_FOUND).entity(gson.toJson(responseMap)).build();
+            case DONE:
+            case CANCELED:
+                return Response.Status.OK;
+            case QUEUED:
+                return Response.Status.CREATED;
+            case NOTSTARTED:
+            case INPROGRESS:
+                return Response.Status.ACCEPTED;
+            case NOTFOUND:
+                return Response.Status.NOT_FOUND;
+            case ERROR:
+                return Response.Status.INTERNAL_SERVER_ERROR;
+            default:
+                return Response.Status.BAD_REQUEST; // should never get here
         }
     }
 }
