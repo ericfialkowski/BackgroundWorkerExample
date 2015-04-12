@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 
@@ -67,20 +66,16 @@ public class HazelcastWorkQueue implements WorkQueue
         queuedWork.put(workResponse.getJobId(), workItem);
         backgroundWorker.submit(() ->
         {
-            do
+            try
             {
-                try
-                {
-                    TimeUnit.SECONDS.sleep(10);
-                }
-                catch (InterruptedException ex)
-                {
-                    // ignore
-                }
+                TimeUnit.SECONDS.sleep(workItem);
             }
-            while ( ThreadLocalRandom.current().nextDouble() < .25);
+            catch (InterruptedException ex)
+            {
+                // ignore
+            }
             System.out.printf("Finished job %s%n", workResponse.getJobId());
-            // move from queued to finished  (note: these two operations should be locked @ same time)
+            // move from queued to finished  (note: these two operations probably should be locked @ same time)
             Long work = queuedWork.remove(workResponse.getJobId());
             finishedWork.put(workResponse.getJobId(), work);
         });

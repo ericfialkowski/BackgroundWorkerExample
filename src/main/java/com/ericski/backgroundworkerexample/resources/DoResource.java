@@ -3,7 +3,6 @@ package com.ericski.backgroundworkerexample.resources;
 import com.google.gson.Gson;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -34,21 +33,17 @@ public class DoResource
     {
         Gson gson = new Gson();
 
-        do
+        try
         {
-            try
-            {
-                TimeUnit.SECONDS.sleep(5);
-            }
-            catch (InterruptedException ex)
-            {
-                // ignore
-            }
+            TimeUnit.SECONDS.sleep(workUnit);
         }
-        while (ThreadLocalRandom.current().nextDouble() < .25);
+        catch (InterruptedException ex)
+        {
+            // ignore
+        }
 
         Map<String, Object> responseMap = new HashMap<>();
-        responseMap.put("job", System.currentTimeMillis());
+        responseMap.put("job", workUnit);
 
         return Response.ok(gson.toJson(responseMap)).build();
     }
