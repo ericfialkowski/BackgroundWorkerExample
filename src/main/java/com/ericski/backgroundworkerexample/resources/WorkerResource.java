@@ -1,7 +1,8 @@
 package com.ericski.backgroundworkerexample.resources;
 
+import com.ericski.backgroundworkerexample.dao.HazelcastWorkQueue;
 import com.ericski.backgroundworkerexample.dao.JobResponse;
-import com.ericski.backgroundworkerexample.dao.SimpleWorkQueue;
+import com.ericski.backgroundworkerexample.dao.WorkQueue;
 import com.google.gson.Gson;
 import java.util.UUID;
 import javax.ws.rs.Consumes;
@@ -18,7 +19,8 @@ import javax.ws.rs.core.Response;
 @Path("worker")
 public class WorkerResource
 {
-    private static final SimpleWorkQueue workQueue = new SimpleWorkQueue();
+//    private static final WorkQueue workQueue = new SimpleWorkQueue();
+    private static final WorkQueue workQueue = new HazelcastWorkQueue();
 
     /**
      * Lists all outstanding background work

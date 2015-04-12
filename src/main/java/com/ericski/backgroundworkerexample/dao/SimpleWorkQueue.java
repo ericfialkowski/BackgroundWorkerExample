@@ -68,7 +68,7 @@ public class SimpleWorkQueue implements WorkQueue
             {
                 try
                 {
-                    TimeUnit.SECONDS.sleep(5);
+                    TimeUnit.SECONDS.sleep(10);
                 }
                 catch (InterruptedException ex)
                 {
@@ -76,6 +76,7 @@ public class SimpleWorkQueue implements WorkQueue
                 }
             }
             while ( ThreadLocalRandom.current().nextDouble() < .25);
+            System.out.printf("Finished job %s%n", workResponse.getJobId());
             // move from queued to finished  (note: these two operations should be locked @ same time)
             Long work = queuedWork.remove(workResponse.getJobId());
             finishedWork.put(workResponse.getJobId(), work);

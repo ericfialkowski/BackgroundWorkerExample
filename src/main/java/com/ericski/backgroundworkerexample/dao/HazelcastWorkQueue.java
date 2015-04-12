@@ -1,30 +1,33 @@
 package com.ericski.backgroundworkerexample.dao;
 
+import com.hazelcast.core.HazelcastInstance;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 
-public class SimpleWorkQueue implements WorkQueue
+public class HazelcastWorkQueue implements WorkQueue
 {    
-    private final Map<UUID, Long> finishedWork = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> queuedWork = new ConcurrentHashMap<>();        
+    private final Map<UUID, Long> finishedWork;
+    private final Map<UUID, Long> queuedWork;
     private final ExecutorService backgroundWorker;
     
-    public SimpleWorkQueue()
+    public HazelcastWorkQueue()
     {
+        HazelcastInstance hzc = HazelcastFactory.INSTANCE.getHazelcastInstance();
         backgroundWorker = Executors.newCachedThreadPool((Runnable r) ->
         {
             Thread thread = Executors.defaultThreadFactory().newThread(r);
             thread.setDaemon(true);
             return thread;
         });
+        finishedWork = hzc.getMap("finished");
+        queuedWork = hzc.getMap("queued");
     }
     
     @Override
@@ -68,7 +71,7 @@ public class SimpleWorkQueue implements WorkQueue
             {
                 try
                 {
-                    TimeUnit.SECONDS.sleep(5);
+                    TimeUnit.SECONDS.sleep(10);
                 }
                 catch (InterruptedException ex)
                 {
@@ -76,6 +79,7 @@ public class SimpleWorkQueue implements WorkQueue
                 }
             }
             while ( ThreadLocalRandom.current().nextDouble() < .25);
+            System.out.printf("Finished job %s%n", workResponse.getJobId());
             // move from queued to finished  (note: these two operations should be locked @ same time)
             Long work = queuedWork.remove(workResponse.getJobId());
             finishedWork.put(workResponse.getJobId(), work);
