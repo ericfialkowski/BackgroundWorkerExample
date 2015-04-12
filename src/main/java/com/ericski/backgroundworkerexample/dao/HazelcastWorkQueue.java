@@ -1,29 +1,32 @@
 package com.ericski.backgroundworkerexample.dao;
 
+import com.hazelcast.core.HazelcastInstance;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 
-public class SimpleWorkQueue implements WorkQueue
+public class HazelcastWorkQueue implements WorkQueue
 {    
-    private final Map<UUID, Long> finishedWork = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> queuedWork = new ConcurrentHashMap<>();        
+    private final Map<UUID, Long> finishedWork;
+    private final Map<UUID, Long> queuedWork;
     private final ExecutorService backgroundWorker;
     
-    public SimpleWorkQueue()
+    public HazelcastWorkQueue()
     {
+        HazelcastInstance hzc = HazelcastFactory.INSTANCE.getHazelcastInstance();
         backgroundWorker = Executors.newCachedThreadPool((Runnable r) ->
         {
             Thread thread = Executors.defaultThreadFactory().newThread(r);
             thread.setDaemon(true);
             return thread;
         });
+        finishedWork = hzc.getMap("finished");
+        queuedWork = hzc.getMap("queued");
     }
     
     @Override
