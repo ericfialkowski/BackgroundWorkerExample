@@ -38,16 +38,16 @@ public class Main
         Hazelcast.shutdownAll();
     }
 
+	@SuppressWarnings("squid:S1166")
     private static int freePort()
     {
         int port = 9090;
         boolean found = false;
         do
         {
-            try
+            try(ServerSocket ss = new ServerSocket())
             {
                 SocketAddress sa = new InetSocketAddress(port);
-                ServerSocket ss = new ServerSocket();
                 ss.bind(sa);
                 found = true;
                 ss.close();

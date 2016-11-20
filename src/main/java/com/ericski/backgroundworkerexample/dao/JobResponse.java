@@ -15,11 +15,31 @@ public class JobResponse<T>
         CANCELED,
         NOTFOUND
     }
-    
+
     private UUID jobId;
     private JobStatus status;
     private T job;
-    
+
+
+    public JobResponse()
+    {
+        this.jobId = UUID.randomUUID();
+        this.status = JobStatus.QUEUED;
+    }
+
+    public JobResponse(UUID jobId, JobStatus status)
+    {
+        this.jobId = jobId;
+        this.status = status;
+    }
+
+    public JobResponse(UUID jobId, T job)
+    {
+        this.jobId = jobId;
+        this.status = JobStatus.DONE;
+        this.job = job;
+    }
+	
     public boolean hasWork()
     {
         return job != null;
@@ -54,23 +74,4 @@ public class JobResponse<T>
     {
         this.jobId = jobId;
     }
-    
-    public JobResponse()
-    {
-        this.jobId = UUID.randomUUID();
-        this.status = JobStatus.QUEUED;
-    }           
-    
-    public JobResponse(UUID jobId, JobStatus status)
-    {
-        this.jobId = jobId;
-        this.status = status;
-    }
-
-    public JobResponse(UUID jobId, T job)
-    {
-        this.jobId = jobId;
-        this.status = JobStatus.DONE;
-        this.job = job;
-    }                
 }

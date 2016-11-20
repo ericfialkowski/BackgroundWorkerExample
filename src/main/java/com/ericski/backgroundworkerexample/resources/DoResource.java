@@ -33,14 +33,8 @@ public class DoResource
     {
         Gson gson = new Gson();
 
-        try
-        {
-            TimeUnit.SECONDS.sleep(workUnit);
-        }
-        catch (InterruptedException ex)
-        {
-            // ignore
-        }
+        TimeUnit.SECONDS.sleep(workUnit);
+
 
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put("job", workUnit);
