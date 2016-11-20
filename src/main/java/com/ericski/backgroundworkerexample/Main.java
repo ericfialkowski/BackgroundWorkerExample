@@ -18,12 +18,15 @@ public class Main
     // Base URI the Grizzly HTTP server will listen on
     public static final String BASE_URI = "http://localhost:%d/";
 
+	private Main() {}
+
     /**
      * Main method.
      *
      * @param args
      * @throws IOException
      */
+	@SuppressWarnings("squid:S106")
     public static void main(String[] args) throws IOException
     {
         String uriString = String.format(BASE_URI, freePort());
@@ -33,7 +36,6 @@ public class Main
         System.out.printf("Jersey app started with at %s %nHit enter to stop it...%n", uriString);
         System.in.read();
         server.shutdownNow();
-//        HazelcastFactory.INSTANCE.getHazelcastInstance().shutdown();
 
         Hazelcast.shutdownAll();
     }

@@ -19,7 +19,7 @@ import javax.ws.rs.core.Response;
 @Path("worker")
 public class WorkerResource
 {
-    private static final WorkQueue workQueue = new SimpleWorkQueue();
+    private static final WorkQueue WORK_QUEUE = new SimpleWorkQueue();
 
     /**
      * Lists all outstanding background work
@@ -31,7 +31,7 @@ public class WorkerResource
     public Response listAll()
     {
         Gson gson = new Gson();
-        return Response.ok(gson.toJson(workQueue.getAllJobs())).build();
+        return Response.ok(gson.toJson(WORK_QUEUE.getAllJobs())).build();
     }
 
     /**
@@ -45,7 +45,7 @@ public class WorkerResource
     @Produces(MediaType.APPLICATION_JSON)
     public Response get(@PathParam("jobid") UUID id)
     {
-        JobResponse<Long> work = workQueue.consumeJob(id);
+        JobResponse<Long> work = WORK_QUEUE.consumeJob(id);
         return toWebResponse(work);
     }
 
@@ -60,7 +60,7 @@ public class WorkerResource
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response addWork(@FormParam("workUnit") long workUnit)
     {
-        JobResponse<Long> work = workQueue.submitJob(workUnit);
+        JobResponse<Long> work = WORK_QUEUE.submitJob(workUnit);
         return toWebResponse(work);
     }
 
@@ -75,14 +75,14 @@ public class WorkerResource
     @Path("{jobid}")
     public Response cancelWork(@PathParam("jobid") UUID id)
     {
-        JobResponse<Long> canceledJob = workQueue.cancelJob(id);
+        JobResponse<Long> canceledJob = WORK_QUEUE.cancelJob(id);
         return toWebResponse(canceledJob);
     }
 
     /*--------------------------------------------------------------------------------
      *
      *  Various Helpers
-     *    
+     *
      --------------------------------------------------------------------------------*/
     private String toJson(JobResponse<Long> response)
     {

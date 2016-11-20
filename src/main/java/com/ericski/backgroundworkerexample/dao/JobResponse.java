@@ -5,7 +5,7 @@ import java.util.UUID;
 public class JobResponse<T>
 {
 
-    public static enum JobStatus
+    public enum JobStatus
     {
         QUEUED,
         NOTSTARTED,
@@ -39,7 +39,7 @@ public class JobResponse<T>
         this.status = JobStatus.DONE;
         this.job = job;
     }
-	
+
     public boolean hasWork()
     {
         return job != null;
