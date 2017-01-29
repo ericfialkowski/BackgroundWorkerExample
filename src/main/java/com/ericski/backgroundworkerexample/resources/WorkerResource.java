@@ -98,6 +98,7 @@ public class WorkerResource
             .build();
     }
 
+	@SuppressWarnings("squid:MethodCyclomaticComplexity")
     private Response.Status jobStatusToResponseStatus(JobResponse.JobStatus jobStatus)
     {
         switch (jobStatus)
